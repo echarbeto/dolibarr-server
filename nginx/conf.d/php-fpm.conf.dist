@@ -1,0 +1,57 @@
+server {
+    listen 80;
+    index index.php index.html;
+    error_log  /var/log/nginx/error.log;
+    access_log /var/log/nginx/access.log;
+    root /var/www/html;
+    server_name localhost:85;
+
+    add_header 'Access-Control-Allow-Origin' 'http://localhost:3000' always;
+    add_header 'Access-Control-Allow-Methods' 'POST, GET, OPTIONS, DELETE, PUT' always;
+    add_header 'Access-Control-Max-Age' 3600 always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always;
+    add_header 'Access-Control-Expose-Headers' 'Content-Length' always;
+    add_header 'Access-Control-Allow-Headers' 'X-Requested-With, Content-Type, Origin, Authorization, Accept, dolapikey' always;
+    
+    location ~ [^/]\.php(/|$) {
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }
+        fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+        if (!-f $document_root$fastcgi_script_name) {
+            return 404;
+        }
+
+        # Mitigate https://httpoxy.org/ vulnerabilities
+        fastcgi_param HTTP_PROXY "";
+
+        fastcgi_pass php-fpm:9000;
+        fastcgi_index index.php;
+
+        # include the fastcgi_param setting
+        include fastcgi_params;
+
+        # SCRIPT_FILENAME parameter is used for PHP FPM determining
+        #  the script name. If it is not set in fastcgi_params file,
+        # i.e. /etc/nginx/fastcgi_params or in the parent contexts,
+        # please comment off following line:
+        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        # Dolibarr Rest API path support
+        fastcgi_param  PATH_INFO       $fastcgi_path_info;
+        fastcgi_param  PATH_TRANSLATED $document_root$fastcgi_script_name;
+
+    }
+    
+    # Pretty REST API URL
+    location ~ ^sistemafs/api/(?!(index\.php))(.*) {
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }
+        try_files $uri /sistemafs/api/index.php/$2?$query_string;
+    }
+    
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+        gzip_static on;
+    }
+} 

@@ -1,0 +1,7 @@
+.directory
+.env
+.idea
+nginx/logs/*
+nginx/conf.d/php-fpm.conf
+php/local.ini
+mariadb

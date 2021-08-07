@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  #MariaDB
+  database:
+    image: mariadb:10.5.9
+    container_name: "${NAME_PROJECT}-mariadb"
+    restart: always
+    ports:
+      - "3311:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD
+    volumes:
+      - "${MAIN_DIRECTORY}/mariadb/:/var/lib/mysql"
+    networks:
+      - backend
+  #Nginx
+  web:
+    image: nginx:alpine
+    container_name: "${NAME_PROJECT}-nginx"
+    restart: always
+    tty: true
+    ports:
+      - "85:80"
+      - "8085:443"
+    volumes:
+      - "${DOLIBARR_PUBLIC_DIRECTORY}:/var/www/html"
+      - "${MAIN_DIRECTORY}/nginx/conf.d/:/etc/nginx/conf.d/"
+      - "${MAIN_DIRECTORY}/nginx/logs/:/var/log/nginx/"
+    depends_on:
+      - php-fpm
+      - database
+    networks:
+      - backend
+      - frontend
+  #PHP-FPM
+  php-fpm:
+    build:
+      context: './php-fpm/'
+    #image: php:7.4-fpm-alpine
+    container_name: "${NAME_PROJECT}-php-fpm"
+    networks:
+      - backend
+    volumes:
+      - "${DOLIBARR_PUBLIC_DIRECTORY}/:/var/www/html/"
+      - "${MAIN_DIRECTORY}/php/local.ini:/usr/local/etc/php/conf.d/local.ini"
+      - "${DOLIBARR_PRIVATE_DIRECTORY}:/var/www/private"
+
+networks:
+  backend:
+    name: "${NAME_PROJECT}_backend"
+  frontend:
+    name: "${NAME_PROJECT}_frontend"
+    

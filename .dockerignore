@@ -1,0 +1,6 @@
+.idea
+.gitignore
+nginx/logs/
+.env.dist
+nginx/conf.d/php-fpm.conf.dist
+php/local.ini.dist
